@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/* Custom theme overrides for Tailwind v4 */
+@theme {
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
+
+  /* Strict Command Center Color Palette */
+  --color-bg-main: #0B1220;
+  --color-bg-panel: #111827;
+  --color-bg-accent: #1F2937;
+
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  --color-text-muted: #9CA3AF;
+
+  --color-accent-blue: #3b82f6;
+  --color-status-green: #10b981;
+  --color-status-amber: #f59e0b;
+  --color-status-red: #ef4444;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+body {
+  background-color: #0B1220;
+  color: #F9FAFB;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* Dense styling utilities */
+.panel {
+  background-color: #111827;
+  border: 1px solid #1F2937;
+  border-radius: 6px;
+}
+
+/* Custom scrollbars - thin and clean */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0B1220;
+}
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Table dense cell sizes */
+table th, table td {
+  padding: 8px 12px !important;
+  font-size: 13px;
+  border-bottom: 1px solid #1F2937;
+}
+
+table th {
+  background-color: #111827;
+  color: #9CA3AF;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+/* Input elements styling */
+input, select, textarea {
+  background-color: #1F2937 !important;
+  border: 1px solid #1f2937 !important;
+  color: #F9FAFB !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  padding: 6px 10px !important;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: #3b82f6 !important;
+}
+
+/* Recharts styling tweaks for high density */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+.recharts-default-tooltip {
+  background-color: #111827 !important;
+  border: 1px solid #1F2937 !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+}
+.recharts-legend-item-text {
+  color: #D1D5DB !important;
+  font-size: 11px !important;
+}
+.recharts-cartesian-grid line {
+  stroke: #1F2937 !important;
+}
+.recharts-text {
+  fill: #9CA3AF !important;
+  font-size: 10px !important;
+  font-family: var(--font-mono);
+}
+
+/* Animations for command centers */
+@keyframes scanning-line {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
+.scan-line {
+  height: 2px;
+  background: rgba(239, 68, 68, 0.4);
+  animation: scanning-line 3s infinite linear;
+}
