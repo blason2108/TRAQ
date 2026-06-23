@@ -77,7 +77,7 @@ export const LicensePlateRecognition = ({ onCorrectPlate, violations }) => {
 
         <div className="panel p-3 border-2 border-border flex items-center gap-3 bg-background">
           <div className="p-2 bg-foreground text-background rounded-none border border-border">
-            <Sparkles className="w-5 h-5 text-foreground" />
+            <Sparkles className="w-5 h-5 text-background" />
           </div>
           <div>
             <p className="text-[9px] font-sans font-black text-foreground tracking-widest uppercase">02 // INFERENCE LIMIT</p>
@@ -87,7 +87,7 @@ export const LicensePlateRecognition = ({ onCorrectPlate, violations }) => {
 
         <div className="panel p-3 border-2 border-border flex items-center gap-3 bg-background">
           <div className="p-2 bg-foreground text-background rounded-none border border-border">
-            <ShieldAlert className="w-5 h-5 text-foreground" />
+            <ShieldAlert className="w-5 h-5 text-background" />
           </div>
           <div>
             <p className="text-[9px] font-sans font-black text-foreground tracking-widest uppercase">03 // MANUAL CHANGES</p>

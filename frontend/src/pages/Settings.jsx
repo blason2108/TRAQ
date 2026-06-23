@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { MOCK_MODEL_METRICS } from "../data/mockData";
 import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from "recharts";
 import { Cpu, Server, Sliders, ShieldCheck, Activity, HardDrive, ShieldAlert } from "lucide-react";
@@ -8,6 +8,26 @@ export const Settings = () => {
   const [violationThreshold, setViolationThreshold] = useState(0.8);
   const [ocrThreshold, setOcrThreshold] = useState(0.85);
   const [streamFPS, setStreamFPS] = useState(30);
+
+  // Load config from backend on mount
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/config");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.vehicleThreshold !== undefined) setVehicleThreshold(data.vehicleThreshold);
+          if (data.violationThreshold !== undefined) setViolationThreshold(data.violationThreshold);
+          if (data.ocrThreshold !== undefined) setOcrThreshold(data.ocrThreshold);
+          if (data.streamFPS !== undefined) setStreamFPS(data.streamFPS);
+          if (data.signalConfigs !== undefined) setSignalConfigs(data.signalConfigs);
+        }
+      } catch (err) {
+        console.error("Failed to load config from backend:", err);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   // Signal specific enforcement states
   const [selectedCam, setSelectedCam] = useState("CAM-01");
@@ -39,12 +59,52 @@ export const Settings = () => {
     { name: "Accuracy", value: MOCK_MODEL_METRICS.accuracy, fill: "var(--foreground)" }
   ], []);
 
-  const handleSaveConfig = () => {
-    alert("Model thresholds and pipeline parameters synced to edge inference nodes successfully.");
+  const saveConfigToBackend = async (updatedConfig) => {
+    try {
+      const res = await fetch("http://localhost:8000/api/config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedConfig),
+      });
+      if (res.ok) {
+        return true;
+      }
+    } catch (err) {
+      console.error("Failed to save config to backend:", err);
+    }
+    return false;
   };
 
-  const handleSaveSignalConfig = () => {
-    alert(`Enforcement profile for ${selectedCam} (${signalConfigs[selectedCam].name}) pushed to local edge controller.`);
+  const handleSaveConfig = async () => {
+    const success = await saveConfigToBackend({
+      vehicleThreshold,
+      violationThreshold,
+      ocrThreshold,
+      streamFPS,
+      signalConfigs,
+    });
+    if (success) {
+      alert("Model thresholds and pipeline parameters synced to edge inference nodes successfully.");
+    } else {
+      alert("Failed to sync config to backend.");
+    }
+  };
+
+  const handleSaveSignalConfig = async () => {
+    const success = await saveConfigToBackend({
+      vehicleThreshold,
+      violationThreshold,
+      ocrThreshold,
+      streamFPS,
+      signalConfigs,
+    });
+    if (success) {
+      alert(`Enforcement profile for ${selectedCam} (${signalConfigs[selectedCam].name}) pushed to local edge controller.`);
+    } else {
+      alert("Failed to sync config to backend.");
+    }
   };
 
   return (

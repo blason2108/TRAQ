@@ -60,7 +60,7 @@ export const ViolationsFeed = ({ violations, onViewViolation, onUpdateStatus, se
       case "No Helmet": return "text-accent border-accent bg-background";
       case "Speeding": return "text-accent border-accent bg-background";
       case "No Seatbelt": return "text-foreground border-border bg-card";
-      case "Running Red Light": return "text-background border-border bg-foreground";
+      case "Running Red Light": return "text-red-600 dark:text-red-400 border-red-600 dark:border-red-500/50 bg-red-50 dark:bg-red-950/30";
       case "Triple Riding": return "text-accent border-accent bg-card";
       case "Phone Usage": return "text-foreground border-border bg-background";
       default: return "text-foreground border-border bg-background";
@@ -150,7 +150,6 @@ export const ViolationsFeed = ({ violations, onViewViolation, onUpdateStatus, se
           <table className="w-full border-collapse text-left font-sans text-xs">
             <thead>
               <tr className="bg-table-header-bg text-table-header-text text-[10px] uppercase font-black tracking-wider border-b-2 border-border">
-                <th className="p-3">Frame</th>
                 <th className="p-3 cursor-pointer hover:text-accent" onClick={() => handleSort("id")}>
                   Case ID
                 </th>
@@ -178,7 +177,7 @@ export const ViolationsFeed = ({ violations, onViewViolation, onUpdateStatus, se
             <tbody className="divide-y divide-border/20 text-xs">
               {filteredViolations.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="p-8 text-center text-muted-foreground font-black uppercase font-sans">
+                  <td colSpan="8" className="p-8 text-center text-muted-foreground font-black uppercase font-sans">
                     NO DISPATCH ENTRIES MATCHING SELECTION
                   </td>
                 </tr>
@@ -188,15 +187,7 @@ export const ViolationsFeed = ({ violations, onViewViolation, onUpdateStatus, se
                     key={viol.id}
                     className="hover:bg-card transition-colors group"
                   >
-                    {/* SVG Frame Thumbnail */}
-                    <td className="p-2">
-                      <div className="w-12 h-8 rounded-none bg-card border border-border flex items-center justify-center relative overflow-hidden">
-                        <svg viewBox="0 0 100 60" className="w-full h-full opacity-40">
-                          <rect width="100%" height="100%" fill="none" />
-                          <circle cx="50" cy="30" r="10" fill="none" stroke="currentColor" strokeWidth="2" className="text-foreground" />
-                        </svg>
-                      </div>
-                    </td>
+
 
                     {/* Case ID */}
                     <td className="p-3 font-mono font-bold text-foreground">
@@ -216,7 +207,7 @@ export const ViolationsFeed = ({ violations, onViewViolation, onUpdateStatus, se
 
                     {/* Violation Type */}
                     <td className="p-3">
-                      <span className={`px-2 py-0.5 text-[9px] font-black border rounded-none uppercase tracking-wider ${getViolationBadgeStyle(viol.violationType)}`}>
+                      <span className={`px-2 py-0.5 text-[9px] font-black border rounded-none uppercase tracking-wider whitespace-nowrap ${getViolationBadgeStyle(viol.violationType)}`}>
                         {viol.violationType}
                       </span>
                     </td>

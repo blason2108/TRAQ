@@ -20,10 +20,85 @@ function AppContent() {
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedViolation, setSelectedViolation] = useState(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   // Violations list state so updates reflect dynamically
-  const [violations, setViolations] = useState(MOCK_VIOLATIONS);
+  const [violations, setViolations] = useState([]);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+
+  // Sync violations from backend on load
+  useEffect(() => {
+    const fetchViolations = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/violations");
+        if (res.ok) {
+          const data = await res.json();
+          const mapped = data.violations.map((v) => {
+            // Map violationType
+            let vType = v.infraction;
+            if (v.infraction === "Helmet non-compliance") vType = "No Helmet";
+            else if (v.infraction === "Triple riding") vType = "Triple Riding";
+            else if (v.infraction === "Red-light violation") vType = "Running Red Light";
+            else if (v.infraction === "Stop-line violation") vType = "Running Red Light";
+            else if (v.infraction === "Wrong-side driving") vType = "Wrong-side driving";
+            else if (v.infraction === "Illegal parking") vType = "Illegal parking";
+            
+            // Map status casing
+            let status = "Pending Review";
+            if (v.status === "Confirmed" || v.status === "CONFIRMED") status = "Confirmed";
+            else if (v.status === "Rejected" || v.status === "REJECTED") status = "Rejected";
+
+            // Parse confidence
+            let confVal = parseFloat(v.conf) / 100;
+            if (isNaN(confVal)) confVal = 0.95;
+
+            // Simulated timestamp
+            const mockTime = new Date();
+            const offsetSec = parseFloat(v.time) || 0;
+            mockTime.setSeconds(mockTime.getSeconds() - offsetSec);
+            const timestamp = mockTime.toISOString();
+
+            return {
+              id: v.case_id,
+              timestamp: timestamp,
+              location: v.location || "Koramangala 80ft Rd - Cam 04",
+              gps: "12.9352° N, 77.6245° E",
+              vehicleType: v.infraction?.toLowerCase().includes("helmet") || v.infraction?.toLowerCase().includes("triple") ? "Motorcycle" : "Car",
+              violationType: vType,
+              severity: vType === "Running Red Light" || vType === "Speeding" || vType === "Wrong-side driving" ? "high" : "medium",
+              licensePlate: v.plate_ocr || "UNKNOWN",
+              ocrConfidence: 0.90,
+              confidence: confVal,
+              status: status,
+              annotatedBoxes: [
+                { type: "vehicle", label: "Detected Vehicle", x: 100, y: 120, w: 300, h: 240, color: "#3b82f6" },
+                { type: "violation", label: `${vType} Detected`, x: 150, y: 90, w: 200, h: 220, color: "#ef4444" }
+              ],
+              cameraDetails: {
+                model: "HikVision PTZ-4K",
+                fps: 30,
+                resolution: "3840x2160"
+              },
+              inferenceTime: "40ms",
+              video_url: v.video_url ? (v.video_url.startsWith("http") ? v.video_url : `http://localhost:8000${v.video_url}`) : null
+            };
+          });
+          // Combine with mock violations
+          setViolations([...mapped, ...MOCK_VIOLATIONS]);
+        } else {
+          setViolations(MOCK_VIOLATIONS);
+        }
+      } catch (err) {
+        console.error("Failed to load violations from backend:", err);
+        setViolations(MOCK_VIOLATIONS);
+      }
+    };
+    fetchViolations();
+
+    // Set up polling to refresh database entries every 5 seconds
+    const interval = setInterval(fetchViolations, 5000);
+    return () => clearInterval(interval);
+  }, [reloadTrigger]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -37,95 +112,46 @@ function AppContent() {
     setSelectedViolation(violation);
   };
 
-  const handleUpdateStatus = (id, newStatus) => {
+  const handleUpdateStatus = async (id, newStatus) => {
     setViolations((prev) =>
       prev.map((v) => (v.id === id ? { ...v, status: newStatus } : v))
     );
 
-    // Update the currently viewed violation in modal if applicable
     if (selectedViolation && selectedViolation.id === id) {
       setSelectedViolation((prev) => ({ ...prev, status: newStatus }));
     }
+
+    try {
+      const dbStatus = newStatus.toUpperCase();
+      await fetch(`http://localhost:8000/api/violations/${id}/status?status=${encodeURIComponent(dbStatus)}`, {
+        method: "PATCH"
+      });
+    } catch (err) {
+      console.error("Failed to update status on server:", err);
+    }
   };
 
-  const handleCorrectPlate = (id, newPlate) => {
+  const handleCorrectPlate = async (id, newPlate) => {
     setViolations((prev) =>
       prev.map((v) => (v.id === id ? { ...v, licensePlate: newPlate, ocrConfidence: 1.0 } : v))
     );
 
-    // Update modal state too
     if (selectedViolation && selectedViolation.id === id) {
       setSelectedViolation((prev) => ({ ...prev, licensePlate: newPlate, ocrConfidence: 1.0 }));
+    }
+
+    try {
+      await fetch(`http://localhost:8000/api/violations/${id}/plate?plate=${encodeURIComponent(newPlate)}`, {
+        method: "PATCH"
+      });
+    } catch (err) {
+      console.error("Failed to update plate on server:", err);
     }
   };
 
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
-
-  // Simulated auto-streaming background generator (adds realism to live feed)
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    const interval = setInterval(() => {
-      // Create a random violation stream occasionally
-      const r = Math.random();
-      if (r > 0.7) {
-        const violationTypesList = ["No Helmet", "Speeding", "No Seatbelt", "Triple Riding", "Running Red Light", "Phone Usage"];
-        const randomType = violationTypesList[Math.floor(Math.random() * violationTypesList.length)];
-        const locationsList = [
-          "Silk Board Junction - Cam 01",
-          "Koramangala 80ft Rd - Cam 04",
-          "Outer Ring Road - Cam 12",
-          "Indiranagar 100ft Rd - Cam 09",
-          "Whitefield Main Road - Cam 07"
-        ];
-        const randomLoc = locationsList[Math.floor(Math.random() * locationsList.length)];
-        const vehiclesList = ["Motorcycle", "Car", "SUV", "Truck"];
-        const randomVeh = vehiclesList[Math.floor(Math.random() * vehiclesList.length)];
-        const suffix = Math.floor(1000 + Math.random() * 9000);
-        const randomPlate = `KA03EX${suffix}`;
-
-        const newViolation = {
-          id: `VIOL-2026-00${violations.length + 1}`,
-          timestamp: new Date().toISOString(),
-          location: randomLoc,
-          gps: "12.9352° N, 77.6245° E",
-          vehicleType: randomVeh,
-          violationType: randomType,
-          severity: randomType === "Speeding" || randomType === "Running Red Light" ? "high" : "medium",
-          licensePlate: randomPlate,
-          ocrConfidence: 0.9 + Math.random() * 0.1,
-          confidence: 0.85 + Math.random() * 0.14,
-          status: "Pending Review",
-          annotatedBoxes: [
-            { type: "vehicle", label: `${randomVeh} (96%)`, x: 100, y: 120, w: 300, h: 240, color: "#3b82f6" },
-            { type: "violation", label: `${randomType} Detected`, x: 150, y: 90, w: 200, h: 220, color: "#ef4444" }
-          ],
-          cameraDetails: {
-            model: "HikVision PTZ-4K",
-            fps: 30,
-            resolution: "3840x2160"
-          },
-          inferenceTime: "40ms"
-        };
-
-        setViolations((prev) => [newViolation, ...prev]);
-
-        // Add a fresh notification
-        const newNotif = {
-          id: Date.now(),
-          text: `Alert: ${randomType} detected at ${randomLoc.split(" - ")[0]} (${randomPlate})`,
-          type: "high",
-          time: "Just now",
-          read: false
-        };
-        setNotifications((prev) => [newNotif, ...prev]);
-      }
-    }, 15000); // Trigger every 15 seconds
-
-    return () => clearInterval(interval);
-  }, [isLoggedIn, violations.length]);
 
   // Login bypass active. Dashboard renders directly.
 
@@ -141,6 +167,7 @@ function AppContent() {
             onUpdateStatus={handleUpdateStatus}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            onReload={() => setReloadTrigger((prev) => prev + 1)}
           />
         );
       case "violations":
@@ -161,7 +188,7 @@ function AppContent() {
           />
         );
       case "analytics":
-        return <Analytics />;
+        return <Analytics violations={violations} onViewViolation={handleViewViolation} />;
       case "settings":
         return <Settings />;
       default:
@@ -173,6 +200,7 @@ function AppContent() {
             onUpdateStatus={handleUpdateStatus}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            onReload={() => setReloadTrigger((prev) => prev + 1)}
           />
         );
     }

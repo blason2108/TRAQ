@@ -9,14 +9,14 @@ export const MOCK_VIOLATIONS = [
     vehicleType: "Motorcycle",
     violationType: "No Helmet",
     severity: "high", // high, medium, low
-    licensePlate: "KA03HA4920",
+    licensePlate: "PB02BS2316",
     ocrConfidence: 0.98,
     confidence: 0.96,
     status: "Pending Review",
     annotatedBoxes: [
       { type: "vehicle", label: "Motorcycle (97%)", x: 120, y: 140, w: 220, h: 240, color: "#3b82f6" },
       { type: "helmet", label: "Rider: No Helmet (96%)", x: 200, y: 80, w: 60, h: 60, color: "#ef4444" },
-      { type: "plate", label: "Plate: KA03HA4920 (98%)", x: 190, y: 320, w: 80, h: 30, color: "#10b981" }
+      { type: "plate", label: "Plate: PB02BS2316 (98%)", x: 190, y: 320, w: 80, h: 30, color: "#10b981" }
     ],
     cameraDetails: {
       model: "HikVision PTZ-4K",
@@ -36,7 +36,7 @@ export const MOCK_VIOLATIONS = [
     licensePlate: "MH12GP7731",
     ocrConfidence: 0.95,
     confidence: 0.91,
-    status: "Confirmed",
+    status: "Pending Review",
     annotatedBoxes: [
       { type: "vehicle", label: "Car (99%)", x: 80, y: 100, w: 340, h: 260, color: "#3b82f6" },
       { type: "seatbelt", label: "Driver: No Seatbelt (91%)", x: 160, y: 130, w: 70, h: 90, color: "#f59e0b" },
@@ -233,7 +233,7 @@ export const MOCK_BREAKDOWN = [
 ];
 
 export const MOCK_LPR_LATEST = [
-  { id: "LPR-1", plate: "KA03HA4920", confidence: 0.98, timestamp: "14:48:12", corrected: false },
+  { id: "LPR-1", plate: "PB02BS2316", confidence: 0.98, timestamp: "14:48:12", corrected: false },
   { id: "LPR-2", plate: "MH12GP7731", confidence: 0.95, timestamp: "14:45:30", corrected: false },
   { id: "LPR-3", plate: "DL4CAF8821", confidence: 0.92, timestamp: "14:42:05", corrected: false },
   { id: "LPR-4", plate: "KA51MB2020", confidence: 0.99, timestamp: "14:38:19", corrected: false },
@@ -262,7 +262,7 @@ export const MOCK_HEATMAP = [
 
 export const MOCK_NOTIFICATIONS = [
   { id: 1, text: "Critical: Speeding detected at ORR - Cam 12 (94 km/h)", type: "critical", time: "2 min ago", read: false },
-  { id: 2, text: "OCR match: Plate KA03HA4920 flagged in Watchlist", type: "info", time: "5 min ago", read: false },
+  { id: 2, text: "OCR match: Plate PB02BS2316 flagged in Watchlist", type: "info", time: "5 min ago", read: false },
   { id: 3, text: "High severity: Triple Riding detected at Silk Board - Cam 02", type: "high", time: "8 min ago", read: true },
   { id: 4, text: "System Warning: Cam 08 connection latency exceeded 150ms", type: "warning", time: "15 min ago", read: true }
 ];

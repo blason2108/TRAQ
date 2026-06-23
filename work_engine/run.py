@@ -92,12 +92,12 @@ def run_video(video_path: str,
                     track_id=ev.track_id,
                     time=str(round(frame_idx/fps, 2)),
                     signal=camera_id,
-                    plate_ocr=str(ev.plate_guess),
-                    infraction=ev.type,
+                    plate_ocr=str(ev.plate),
+                    infraction=ev.violation,
                     conf="95%",
                     location="KORAMANGALA JUNCTION",
                     status="PENDING REVIEW",
-                    video_url=f"http://localhost:8000/static/evidence/clips/clip_track_{ev.track_id}.mp4"
+                    video_url=f"http://localhost:8000/static/evidence/clips/{ev.event_id}.mp4"
                 )
                 db.add(new_v)
                 db.commit()

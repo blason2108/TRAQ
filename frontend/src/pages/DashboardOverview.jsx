@@ -7,6 +7,62 @@ import {
   Compass, Map, Heart, Wifi, Clock, ArrowRight, ExternalLink, Terminal
 } from "lucide-react";
 import { MOCK_KPIS, MOCK_TRENDS, MOCK_BREAKDOWN, MOCK_HOTSPOTS } from "../data/mockData";
+import { ArcGISMap } from "../components/ArcGISMap";
+
+const AuditThumbnail = ({ viol }) => {
+  const [imageSrc, setImageSrc] = useState(`http://localhost:8000/static/sample_images/${viol.id}.jpg`);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageSrc(`http://localhost:8000/static/sample_images/${viol.id}.jpg`);
+    setImageError(false);
+  }, [viol.id]);
+
+  const handleImageError = () => {
+    const typeUrl = `http://localhost:8000/static/sample_images/${encodeURIComponent(viol.violationType)}.jpg`;
+    if (imageSrc !== typeUrl) {
+      setImageSrc(typeUrl);
+    } else {
+      setImageError(true);
+    }
+  };
+
+  if (imageError) {
+    return (
+      <div className="aspect-video w-full rounded-none bg-card border-2 border-border dark:group-hover:border-accent-foreground flex items-center justify-center relative overflow-hidden mb-2.5 swiss-diagonal">
+        <svg viewBox="0 0 100 60" className="w-full h-full opacity-60">
+          <rect width="100%" height="100%" fill="none" />
+          <circle cx="50" cy="30" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-foreground dark:group-hover:text-accent-foreground" />
+          <line x1="50" y1="10" x2="50" y2="50" stroke="currentColor" strokeWidth="1" className="text-foreground dark:group-hover:text-accent-foreground" />
+          <line x1="20" y1="30" x2="80" y2="30" stroke="currentColor" strokeWidth="1" className="text-foreground dark:group-hover:text-accent-foreground" />
+        </svg>
+        <div className="absolute top-1 left-1 bg-foreground text-background text-[8px] font-sans font-black px-1 py-0.2 uppercase tracking-wide dark:group-hover:bg-accent-foreground dark:group-hover:text-accent">
+          {viol.vehicleType}
+        </div>
+        <div className="absolute bottom-1 right-1 text-[8px] font-mono text-foreground font-bold bg-background border border-border px-1 py-0.2 dark:group-hover:border-accent-foreground">
+          CONF: {viol.confidence ? (viol.confidence * 100).toFixed(0) : 90}%
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="aspect-video w-full rounded-none bg-black border-2 border-border dark:group-hover:border-accent-foreground flex items-center justify-center relative overflow-hidden mb-2.5">
+      <img
+        src={imageSrc}
+        alt="Enforcement Crop"
+        className="w-full h-full object-contain"
+        onError={handleImageError}
+      />
+      <div className="absolute top-1 left-1 bg-foreground text-background text-[8px] font-sans font-black px-1 py-0.2 uppercase tracking-wide dark:group-hover:bg-accent-foreground dark:group-hover:text-accent">
+        {viol.vehicleType}
+      </div>
+      <div className="absolute bottom-1 right-1 text-[8px] font-mono text-foreground font-bold bg-background border border-border px-1 py-0.2 dark:group-hover:border-accent-foreground">
+        CONF: {viol.confidence ? (viol.confidence * 100).toFixed(0) : 90}%
+      </div>
+    </div>
+  );
+};
 
 export const DashboardOverview = ({
   violations,
@@ -14,10 +70,15 @@ export const DashboardOverview = ({
   onNavigateToViolations,
   onUpdateStatus,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onReload
 }) => {
   const { theme } = useTheme();
   const [systemClock, setSystemClock] = useState(new Date().toISOString());
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadCam, setUploadCam] = useState("CAM-01");
+  const [uploadStatus, setUploadStatus] = useState("idle"); // idle, uploading, processing, done, error
+  const [statusMsg, setStatusMsg] = useState("");
 
   // Keep system clock updated
   useEffect(() => {
@@ -92,7 +153,7 @@ export const DashboardOverview = ({
       case "No Helmet": return "text-accent border-accent bg-background";
       case "Speeding": return "text-accent border-accent bg-background";
       case "No Seatbelt": return "text-foreground border-border bg-card";
-      case "Running Red Light": return "text-background border-border bg-foreground";
+      case "Running Red Light": return "text-red-600 dark:text-red-400 border-red-600 dark:border-red-500/50 bg-red-50 dark:bg-red-950/30";
       case "Triple Riding": return "text-accent border-accent bg-card";
       case "Phone Usage": return "text-foreground border-border bg-background";
       default: return "text-foreground border-border bg-background";
@@ -182,13 +243,25 @@ export const DashboardOverview = ({
                   08 // LIVE DISPATCH LOG FEED
                 </h3>
               </div>
-              <button
-                onClick={onNavigateToViolations}
-                className="text-[10px] font-sans font-black text-foreground hover:text-accent uppercase tracking-wider flex items-center gap-1 border-b-2 border-border hover:border-accent transition-colors"
-              >
-                EXPAND LIST
-                <ArrowRight className="w-3 h-3" />
-              </button>
+              <div className="flex items-center gap-4">
+                {onReload && (
+                  <button
+                    onClick={onReload}
+                    className="text-[10px] font-sans font-black text-foreground hover:text-accent uppercase tracking-wider flex items-center gap-1 border-b-2 border-border hover:border-accent transition-colors cursor-pointer"
+                    title="Manual Reload Feed"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    RELOAD FEED
+                  </button>
+                )}
+                <button
+                  onClick={onNavigateToViolations}
+                  className="text-[10px] font-sans font-black text-foreground hover:text-accent uppercase tracking-wider flex items-center gap-1 border-b-2 border-border hover:border-accent transition-colors"
+                >
+                  EXPAND LIST
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -227,7 +300,7 @@ export const DashboardOverview = ({
                           </span>
                         </td>
                         <td>
-                          <span className={`px-2 py-0.5 text-[9px] font-black border rounded-none uppercase tracking-wider ${getViolationBadgeStyle(viol.violationType)}`}>
+                          <span className={`px-2 py-0.5 text-[9px] font-black border rounded-none uppercase tracking-wider whitespace-nowrap ${getViolationBadgeStyle(viol.violationType)}`}>
                             {viol.violationType}
                           </span>
                         </td>
@@ -297,21 +370,7 @@ export const DashboardOverview = ({
                         </span>
                       </div>
 
-                      {/* Mock vehicle SVG thumbnail crop */}
-                      <div className="aspect-video w-full rounded-none bg-card border-2 border-border dark:group-hover:border-accent-foreground flex items-center justify-center relative overflow-hidden mb-2.5 swiss-diagonal">
-                        <svg viewBox="0 0 100 60" className="w-full h-full opacity-60">
-                          <rect width="100%" height="100%" fill="none" />
-                          <circle cx="50" cy="30" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-foreground dark:group-hover:text-accent-foreground" />
-                          <line x1="50" y1="10" x2="50" y2="50" stroke="currentColor" strokeWidth="1" className="text-foreground dark:group-hover:text-accent-foreground" />
-                          <line x1="20" y1="30" x2="80" y2="30" stroke="currentColor" strokeWidth="1" className="text-foreground dark:group-hover:text-accent-foreground" />
-                        </svg>
-                        <div className="absolute top-1 left-1 bg-foreground text-background text-[8px] font-sans font-black px-1 py-0.2 uppercase tracking-wide dark:group-hover:bg-accent-foreground dark:group-hover:text-accent">
-                          {viol.vehicleType}
-                        </div>
-                        <div className="absolute bottom-1 right-1 text-[8px] font-mono text-foreground font-bold bg-background border border-border px-1 py-0.2 dark:group-hover:border-accent-foreground">
-                          CONF: {(viol.confidence * 100).toFixed(0)}%
-                        </div>
-                      </div>
+                      <AuditThumbnail viol={viol} />
                     </div>
 
                     {/* Operational action triggers */}
@@ -352,46 +411,19 @@ export const DashboardOverview = ({
                 <div className="flex items-center gap-1.5">
                   <Map className="w-4.5 h-4.5 text-foreground" />
                   <h3 className="text-xs font-black text-foreground uppercase tracking-widest font-display">
-                    10 // GIS INTERSECTION GRID
+                    10 // BANGALORE TRAFFIC MAP
                   </h3>
                 </div>
                 <span className="text-[8px] font-mono text-background bg-foreground px-1.5 py-0.2">UTR-43Q</span>
               </div>
 
-              {/* Vector SVG Grid HUD map representation */}
-              <div className="aspect-video w-full rounded-none bg-map-bg border-2 border-border relative overflow-hidden flex items-center justify-center">
-                <svg viewBox="0 0 400 220" className="w-full h-full opacity-90 select-none swiss-grid-pattern">
-                  {/* Intersecting roadways */}
-                  <path d="M 50 0 L 50 220" stroke="var(--road-stroke)" strokeWidth="6" />
-                  <path d="M 200 0 L 200 220" stroke="var(--road-stroke)" strokeWidth="8" />
-                  <path d="M 0 100 L 400 100" stroke="var(--road-stroke)" strokeWidth="8" />
-                  <path d="M 0 160 L 400 160" stroke="var(--road-stroke)" strokeWidth="6" />
-
-                  {/* Static GIS camera nodes */}
-                  <circle cx="200" cy="150" r="5" fill="var(--accent)" stroke="var(--border)" strokeWidth="1.5" />
-                  <circle cx="140" cy="120" r="4" fill="var(--foreground)" />
-                  <circle cx="110" cy="80" r="4" fill="var(--foreground)" />
-                  <circle cx="260" cy="70" r="4" fill="var(--foreground)" />
-                  <circle cx="320" cy="100" r="4" fill="var(--foreground)" />
-                  <circle cx="80" cy="50" r="4" fill="var(--foreground)" />
-
-                  {/* Electronic City (Offline Node) */}
-                  <line x1="335" y1="175" x2="345" y2="185" stroke="var(--foreground)" strokeWidth="2.5" />
-                  <line x1="345" y1="175" x2="335" y2="185" stroke="var(--foreground)" strokeWidth="2.5" />
-                  <text x="310" y="195" fill="var(--map-label)" fontSize="7.5" fontWeight="900" fontFamily="sans-serif">CAM-18 OFF</text>
-
-                  {/* Dynamic Alert Ping */}
-                  {activePingCoord && (
-                    <g>
-                      <circle cx={activePingCoord.x} cy={activePingCoord.y} r={14} fill="none" stroke="var(--accent)" strokeWidth="2.5" className="animate-ping" />
-                      <circle cx={activePingCoord.x} cy={activePingCoord.y} r={5} fill="var(--accent)" />
-                    </g>
-                  )}
-                </svg>
-
-                <div className="absolute top-1.5 left-1.5 text-[8px] font-sans font-black text-accent-foreground bg-accent px-2 py-0.5 border border-border uppercase tracking-wider">
-                  STREAM LOCK // SECURE
-                </div>
+              {/* Real ArcGIS Leaflet Map Component */}
+              <div className="w-full relative overflow-hidden">
+                <ArcGISMap 
+                  violations={violations}
+                  activePingCoord={activePingCoord}
+                  onViewViolation={onViewViolation}
+                />
               </div>
             </div>
 
@@ -448,6 +480,109 @@ export const DashboardOverview = ({
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Video Upload & Processing Console */}
+          <div className="panel p-4 border-2 border-border bg-background swiss-diagonal">
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <Play className="w-4.5 h-4.5 text-accent" />
+              <h3 className="text-xs font-black text-foreground uppercase tracking-widest font-display">
+                11.5 // INFERENCE VIDEO UPLOAD CORE
+              </h3>
+            </div>
+            
+            <div className="space-y-3.5 font-sans">
+              <div className="space-y-1">
+                <label className="text-[9px] text-foreground uppercase font-black tracking-widest block">CAMERA SELECTOR</label>
+                <select
+                  value={uploadCam}
+                  onChange={(e) => setUploadCam(e.target.value)}
+                  className="w-full bg-background border-2 border-border text-foreground text-xs p-1.5 rounded-none font-mono focus:outline-none uppercase font-bold"
+                >
+                  <option value="CAM-01">CAM-01 (Silk Board North)</option>
+                  <option value="CAM-02">CAM-02 (Silk Board East)</option>
+                  <option value="CAM-04">CAM-04 (Koramangala 80ft)</option>
+                  <option value="CAM-07">CAM-07 (Whitefield Main)</option>
+                  <option value="CAM-09">CAM-09 (Indiranagar 100ft)</option>
+                  <option value="CAM-12">CAM-12 (Outer Ring Road)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] text-foreground uppercase font-black tracking-widest block">CHOOSE TRAFFIC VIDEO</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setUploadFile(e.target.files[0])}
+                  className="w-full text-xs text-foreground bg-card border-2 border-border p-1 focus:outline-none file:mr-2 file:py-0.5 file:px-2 file:border-2 file:border-border file:bg-foreground file:text-background file:rounded-none file:text-[10px] file:font-black file:uppercase file:cursor-pointer hover:file:bg-accent hover:file:text-accent-foreground transition-colors"
+                />
+              </div>
+
+              <button
+                disabled={!uploadFile || uploadStatus === "uploading" || uploadStatus === "processing"}
+                onClick={async () => {
+                  if (!uploadFile) return;
+                  setUploadStatus("uploading");
+                  setStatusMsg("Uploading video package...");
+                  
+                  const formData = new FormData();
+                  formData.append("file", uploadFile);
+                  
+                  try {
+                    const res = await fetch(`http://localhost:8000/api/upload?camera_id=${uploadCam}`, {
+                      method: "POST",
+                      body: formData,
+                    });
+                    if (res.ok) {
+                      setUploadStatus("processing");
+                      setStatusMsg("Running AI pipeline tracking...");
+                      
+                      // Simulate tracking execution and refresh after a few seconds
+                      setTimeout(() => {
+                        setUploadStatus("done");
+                        setStatusMsg("Analysis completed. Dispatch logs updated!");
+                        setUploadFile(null);
+                        // Reset back to idle after a while
+                        setTimeout(() => setUploadStatus("idle"), 4000);
+                      }, 5000);
+                    } else {
+                      setUploadStatus("error");
+                      setStatusMsg("Upload failed on edge node.");
+                    }
+                  } catch (err) {
+                    console.error("Upload error:", err);
+                    setUploadStatus("error");
+                    setStatusMsg("Connection error to core API.");
+                  }
+                }}
+                className={`w-full py-1.5 border-2 font-black text-xs rounded-none uppercase transition-colors cursor-pointer select-none ${
+                  !uploadFile || uploadStatus === "uploading" || uploadStatus === "processing"
+                    ? "bg-card text-muted-foreground/30 border-border/25 cursor-not-allowed"
+                    : "bg-foreground text-background border-border hover:bg-accent hover:border-accent hover:text-accent-foreground"
+                }`}
+              >
+                {uploadStatus === "uploading" && "UPLOADING..."}
+                {uploadStatus === "processing" && "PROCESSING AI..."}
+                {uploadStatus === "idle" && "LAUNCH ANALYSIS"}
+                {uploadStatus === "done" && "SUCCESS!"}
+                {uploadStatus === "error" && "RETRY ANALYSIS"}
+              </button>
+
+              {uploadStatus !== "idle" && (
+                <div className={`p-2 border border-border text-[10px] font-mono font-bold uppercase ${
+                  uploadStatus === "done" ? "bg-foreground text-background" :
+                  uploadStatus === "error" ? "bg-accent/15 text-accent border-accent/30" :
+                  "bg-card text-foreground"
+                }`}>
+                  {uploadStatus === "processing" && (
+                    <div className="w-full bg-background h-1 border border-border rounded-none overflow-hidden mb-1.5">
+                      <div className="bg-accent h-full animate-pulse" style={{ width: "65%" }}></div>
+                    </div>
+                  )}
+                  {statusMsg}
+                </div>
+              )}
             </div>
           </div>
 

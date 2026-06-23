@@ -24,7 +24,7 @@ export function LandingPage({ onEnterDashboard }) {
 
   // Simulated live OCR feed state
   const [ocrFeed, setOcrFeed] = useState([
-    { id: 1, plate: "KA03HA4920", location: "KORAMANGALA", confidence: "98%", time: "JUST NOW", status: "VERIFIED" },
+    { id: 1, plate: "PB02BS2316", location: "KORAMANGALA", confidence: "98%", time: "JUST NOW", status: "VERIFIED" },
     { id: 2, plate: "MH12GP7731", location: "OUTER RING RD", confidence: "95%", time: "1 MIN AGO", status: "VERIFIED" },
     { id: 3, plate: "DL4CAF8821", location: "SILK BOARD", confidence: "92%", time: "3 MIN AGO", status: "PENDING" },
     { id: 4, plate: "KA51MB2020", location: "INDIRANAGAR", confidence: "99%", time: "5 MIN AGO", status: "FLAGGED" },

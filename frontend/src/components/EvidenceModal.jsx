@@ -4,12 +4,61 @@ import { X, Calendar, MapPin, Cpu, CheckCircle2, AlertTriangle, ShieldX, Downloa
 export const EvidenceModal = ({ violation, onClose, onUpdateStatus, onCorrectPlate }) => {
   const [isEditingPlate, setIsEditingPlate] = useState(false);
   const [tempPlate, setTempPlate] = useState(violation.licensePlate);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  // Reset error state when violation changes
+  React.useEffect(() => {
+    setImageLoadError(false);
+  }, [violation.id]);
 
   if (!violation) return null;
 
   const handleSavePlate = () => {
     onCorrectPlate(violation.id, tempPlate);
     setIsEditingPlate(false);
+  };
+
+  const renderEvidenceMedia = () => {
+    // 1. Try to load the sample image first (if it exists and has not errored)
+    if (!imageLoadError) {
+      const sampleImageUrl = `http://localhost:8000/static/sample_images/${violation.id}.jpg`;
+      return (
+        <div className="relative aspect-video w-full rounded-none overflow-hidden bg-black border-2 border-border flex items-center justify-center">
+          <img
+            src={sampleImageUrl}
+            alt="Violation Frame"
+            className="w-full h-full object-contain"
+            onError={(e) => {
+              const typeUrl = `http://localhost:8000/static/sample_images/${encodeURIComponent(violation.violationType)}.jpg`;
+              if (e.target.src !== typeUrl) {
+                e.target.src = typeUrl;
+              } else {
+                setImageLoadError(true);
+              }
+            }}
+          />
+        </div>
+      );
+    }
+
+    // 2. Fall back to video player if a video exists
+    if (violation.video_url) {
+      return (
+        <div className="relative aspect-video w-full rounded-none overflow-hidden bg-black border-2 border-border flex items-center justify-center">
+          <video
+            src={violation.video_url}
+            controls
+            autoPlay
+            loop
+            muted
+            className="w-full h-full object-contain"
+          />
+        </div>
+      );
+    }
+
+    // 3. Fall back to vector drawing if neither exists
+    return renderMockFrame();
   };
 
   // Render a high-tech mock camera frame using SVGs for annotations
@@ -161,7 +210,7 @@ export const EvidenceModal = ({ violation, onClose, onUpdateStatus, onCorrectPla
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 bg-black/60 transition-opacity duration-150 font-display text-xs">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto flex items-center justify-center p-3 bg-black/60 transition-opacity duration-150 font-display text-xs">
       <div className="relative bg-background border-4 border-border w-full max-w-4xl rounded-none flex flex-col md:flex-row max-h-[90vh] md:max-h-[85vh] overflow-hidden shadow-2xl">
 
         {/* Left column: Image frame */}
@@ -178,7 +227,7 @@ export const EvidenceModal = ({ violation, onClose, onUpdateStatus, onCorrectPla
               </div>
             </div>
 
-            {renderMockFrame()}
+            {renderEvidenceMedia()}
           </div>
 
           <div className="mt-3.5 p-2.5 bg-card border-2 border-border rounded-none">

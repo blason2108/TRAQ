@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { MOCK_HEATMAP, MOCK_HOTSPOTS } from "../data/mockData";
 import { Download, MapPin, AlertTriangle, Map, ChevronDown } from "lucide-react";
+import { ArcGISMap } from "../components/ArcGISMap";
 
-export const Analytics = () => {
+export const Analytics = ({ violations = [], onViewViolation }) => {
   const [selectedArea, setSelectedArea] = useState("Entire Bangalore");
 
   const areas = [
@@ -33,6 +34,22 @@ export const Analytics = () => {
     { id: "indira", name: "Indiranagar", cx: 120, cy: 60, count: 88, color: "black" },
     { id: "white", name: "Whitefield", cx: 320, cy: 60, count: 75, color: "black" }
   ];
+
+  const mapCoordinates = {
+    "Koramangala 80ft Rd": { x: 140, y: 120 },
+    "Outer Ring Road": { x: 110, y: 80 },
+    "Silk Board Junction": { x: 200, y: 150 },
+    "Indiranagar 100ft Rd": { x: 260, y: 70 },
+    "Whitefield Main Road": { x: 320, y: 100 },
+    "MG Road Crossing": { x: 80, y: 50 }
+  };
+
+  const activePingCoord = useMemo(() => {
+    if (!violations || violations.length === 0) return null;
+    const latest = violations[0];
+    const matchKey = Object.keys(mapCoordinates).find(k => latest.location.includes(k));
+    return matchKey ? mapCoordinates[matchKey] : null;
+  }, [violations]);
 
   // Dynamic Heatmap based on area selection
   const filteredHeatmap = useMemo(() => {
@@ -253,49 +270,13 @@ export const Analytics = () => {
             <p className="text-[10px] text-muted-foreground">Crosshairs coordinate system of registry nodes</p>
           </div>
 
-          {/* SVG Map Grid */}
-          <div className="aspect-video w-full rounded-none bg-map-bg border-2 border-border relative overflow-hidden flex items-center justify-center mt-2.5">
-            <svg viewBox="0 0 400 220" className="w-full h-full opacity-90 swiss-grid-pattern">
-              {/* Road vectors representing intersections */}
-              <path d="M 40 0 L 40 220" stroke="var(--road-stroke)" strokeWidth="6" />
-              <path d="M 220 0 L 220 220" stroke="var(--road-stroke)" strokeWidth="8" />
-              <path d="M 0 100 L 400 100" stroke="var(--road-stroke)" strokeWidth="8" />
-              <path d="M 0 160 L 400 160" stroke="var(--road-stroke)" strokeWidth="6" />
-
-              {/* Radar nodes */}
-              {mapMarkers.map((marker) => {
-                const isSelected = selectedArea === "Entire Bangalore" || selectedArea === marker.name;
-                const opacity = isSelected ? 1.0 : 0.25;
-                const showPing = isSelected && selectedArea !== "Entire Bangalore";
-                const isSilk = marker.id === "silk";
-                const nodeColor = isSilk ? "var(--accent)" : "var(--foreground)";
-
-                return (
-                  <g key={marker.id} opacity={opacity} className="transition-all duration-150">
-                    {showPing && (
-                      <circle cx={marker.cx} cy={marker.cy} r={8} fill={nodeColor} fillOpacity="0.4" className="animate-ping" />
-                    )}
-                    <circle cx={marker.cx} cy={marker.cy} r={4} fill={nodeColor} stroke="var(--border)" strokeWidth="1" />
-                    <text
-                      x={marker.cx + 6}
-                      y={marker.cy - 3}
-                      fill="var(--foreground)"
-                      fontSize="7"
-                      fontWeight="900"
-                      fontFamily="monospace"
-                      textTransform="uppercase"
-                    >
-                      {marker.name.toUpperCase()} ({marker.count})
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-
-            <div className="absolute top-2 left-2 text-[8px] bg-background border-2 border-border text-foreground px-1.5 py-0.2 rounded-none font-mono font-bold flex items-center gap-1">
-              <Map className="w-3 h-3 text-accent" />
-              <span>COORDS: GIS_UTM_REF // {selectedArea.toUpperCase()}</span>
-            </div>
+          {/* Real ArcGIS Leaflet Map Component */}
+          <div className="w-full relative overflow-hidden mt-2.5">
+            <ArcGISMap 
+              violations={violations}
+              activePingCoord={activePingCoord}
+              onViewViolation={onViewViolation}
+            />
           </div>
 
           <div className="p-2 bg-card text-foreground border border-border rounded-none flex items-center gap-2 text-[10px] mt-2.5 font-bold uppercase select-none">
